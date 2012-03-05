@@ -1,0 +1,76 @@
+A plausible structure for now:
+
+Most of the components listed below would be directly or indirectly
+invoked by libev in response to socket/file events. A Ragel-based
+state machine would make sense for the daap daemon itself, with one
+state machine instantiated per client.
+
+* Config
+   Two structured text files. One has adaapd options and requires a
+   restart or SIGHUP to be used, the other has playlist definitions
+   and is refreshed automatically to allow low-effort reconfiguration
+   of playlists. The reason for this separation is to prevent an
+   inadvertant typo in key adaapd options from causing problems, eg an
+   edited media path causing a full cache wipe/rebuild. The
+   requirement to SIGHUP/restart for that file allows the user to
+   'confirm' their changes. Playlists on the other hand should be
+   relatively quick to rebuild, hopefully no more than a couple
+   seconds. The options file may want to support multiple directories
+   as well as ways to blacklist/filter files by extension or regexp.
+
+* File Listener
+   Finds files within media directories, and monitors for changes to
+   the playlist file. Uses inotify to tell Cache/Config when changes
+   occur, and libev for handling the inotify reads. kevent support
+   could be added for freebsd support.
+
+* Cache
+   Stores both file and playlist information, likely in an sqlite
+   db. When files change, this is called to check if Tagger or
+   Playlist detect any necessary changes. Eg "this file changed, which
+   of these playlists might need to know?"
+
+* Tagger
+   Given a data file handle, produce its metadata. Wrap TagLib, with
+   support for uncommon format-specific fields like Rating.
+
+* Playlist
+   Given a playlist spec and a file's metadata, returns whether the
+   file matches the playlist. It may be useful if each playlist object
+   also had metadata describing what fields they cared about, eg "this
+   playlist only looks at the rating field, so don't tell it about
+   title modifications".
+
+* DAAP service
+   Serves files and Cache output to http/daap. It'd be neat if this
+   interface was relatively generic to someday allow DLNA etc. This
+   would use libev for the socket handling itself.
+
+Extras of varying necessity:
+
+* Client/DB stats
+   It'd be nice to be able to check godaapd's state at any given
+   moment. A simple way could be to listen for eg SIGUSER1, which
+   would trigger printing stats to stdout or similar. Stats could
+   include workload, client count, whos playing what, play counts,
+   etc.
+
+* Video files?
+   DAAP docs imply protocol support. Given the above structure it
+   shouldn't be terribly hard to add. Would mostly be tweaks to Filer
+   and Tagger.
+
+* Transcoding
+   No idea if this would be needed with DAAP unless someone starts
+   caring about devices with meager codec support. If DLNA support is
+   someday added, this may be necessary.
+
+Things to ensure:
+
+* Keep configuration stuff file based
+   Avoid dealing with management interfaces and user permissions. With
+   inotify, things should update automatically when files are
+   modified, anyway.
+
+* Only write to the tag cache.
+   Treat the user's library and configuration as read-only.

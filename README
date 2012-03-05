@@ -1,0 +1,12 @@
+This is a DAAP server with the design goals of simple configuration and efficient operation.
+Use it to access your media library over a local network or over the internet.
+
+It's not done yet, so there aren't really any build instructions yet. When it's finished or thereabouts, the expected dependencies are:
+
+- CMake (build handler)
+- google-test (optional, for unit tests)
+- sqlite (persistent library information)
+- Ragel (state machine for the daap service itself)
+- libev (async file/socket event handling)
+- taglib (media file metadata)
+- inotify (ergo linux-only for now. kevent support may come later?)
