@@ -54,6 +54,10 @@
 #include <sys/stat.h>
 
 namespace {
+	/*****
+	 * Int field retrieval
+	 *****/
+
 	bool string_starts_with(const std::wstring& haystack, const std::wstring& needle) {
 		if (haystack.size() < needle.size()) {
 			return false;
@@ -313,7 +317,9 @@ namespace {
 		return false;
 	}
 
-	//---
+	/*****
+	 * String field retrieval
+	 *****/
 
 	inline bool tag_str(TagLib::Tag* tag, adaapd::Tag_StrId id,
 			adaapd::tag_str_t& out) {
@@ -446,27 +452,10 @@ namespace {
 		}
 		return false;
 	}
-}
 
-namespace {
-	inline bool check_file(const std::string& filepath) {
-		struct stat sb;
-		if (stat(filepath.c_str(), &sb) != 0) {
-			ERR("Unable to stat file %s.", filepath.c_str());
-			return false;
-		}
-		if (access(filepath.c_str(), R_OK) != 0) {
-			ERR("Unable to access file %s: No read access.", filepath.c_str());
-			return false;
-		}
-		if (!S_ISREG(sb.st_mode) && !S_ISLNK(sb.st_mode)) {
-			ERR("Unable to access file %s: Not a regular file or symlink.", filepath.c_str());
-			return false;
-		}
-		return true;
-	}
-
-	//---
+	/*****
+	 * File to tag mappings
+	 *****/
 
 	class Tag_MPEG : public adaapd::Tag {
 	public:
@@ -804,6 +793,24 @@ namespace {
 	};
 	typedef Tag_Riff<TagLib::RIFF::AIFF::File> Tag_RiffAiff;
 	typedef Tag_Riff<TagLib::RIFF::WAV::File> Tag_RiffWav;
+
+
+	inline bool check_file(const std::string& filepath) {
+		struct stat sb;
+		if (stat(filepath.c_str(), &sb) != 0) {
+			ERR("Unable to stat file %s.", filepath.c_str());
+			return false;
+		}
+		if (access(filepath.c_str(), R_OK) != 0) {
+			ERR("Unable to access file %s: No read access.", filepath.c_str());
+			return false;
+		}
+		if (!S_ISREG(sb.st_mode) && !S_ISLNK(sb.st_mode)) {
+			ERR("Unable to access file %s: Not a regular file or symlink.", filepath.c_str());
+			return false;
+		}
+		return true;
+	}
 }
 
 /*static*/ adaapd::tag_t adaapd::Tag::Create(const std::string& path) {
@@ -824,36 +831,38 @@ namespace {
 		ext[i] = toupper(ext[i]);
 	}
 
-    if (ext == "MP3") {
+	if (ext == "MP3") {
 		ret = Tag_MPEG::Create(path);
-    } else if (ext == "OGG") {
+	} else if (ext == "OGG") {
 		ret = Tag_OggVorbis::Create(path);
-    } else if (ext == "OGA") {
-		/* .oga can be any audio in the Ogg container. First try FLAC, then Vorbis. */
+	} else if (ext == "FLAC") {
+		ret = Tag_Flac::Create(path);
+	} else if (ext == "M4A" || ext == "M4R" || ext == "M4B" || ext == "M4P" ||
+			ext == "MP4" || ext == "3G2" || ext == "AAC") {
+		ret = Tag_MP4::Create(path);
+	} else if (ext == "WMA" || ext == "ASF") {
+		ret = Tag_ASF::Create(path);
+	} else if (ext == "OGA") {
+		/* .oga can be any audio in the Ogg container.
+		   First try FLAC, then Vorbis. */
 		ret = Tag_OggFlac::Create(path);
 		if (!ret) {
 			ret = Tag_OggVorbis::Create(path);
 		}
-    } else if (ext == "SPX") {
+	} else if (ext == "SPX") {
 		ret = Tag_OggSpeex::Create(path);
-    } else if (ext == "FLAC") {
-		ret = Tag_Flac::Create(path);
-    } else if (ext == "MPC") {
-		ret = Tag_MPC::Create(path);
-    } else if (ext == "WV") {
-		ret = Tag_WavPack::Create(path);
-    } else if (ext == "TTA") {
-		ret = Tag_TrueAudio::Create(path);
-    } else if (ext == "M4A" || ext == "M4R" || ext == "M4B" || ext == "M4P" || ext == "MP4" || ext == "3G2") {
-		ret = Tag_MP4::Create(path);
-    } else if (ext == "WMA" || ext == "ASF") {
-		ret = Tag_ASF::Create(path);
-    } else if (ext == "AIF" || ext == "AIFF") {
-		ret = Tag_RiffAiff::Create(path);
-    } else if (ext == "WAV") {
+	} else if (ext == "WAV") {
 		ret = Tag_RiffWav::Create(path);
-    } else if (ext == "APE") {
+	} else if (ext == "AIF" || ext == "AIFF") {
+		ret = Tag_RiffAiff::Create(path);
+	} else if (ext == "APE") {
 		ret = Tag_APE::Create(path);
+	} else if (ext == "MPC") {
+		ret = Tag_MPC::Create(path);
+	} else if (ext == "WV") {
+		ret = Tag_WavPack::Create(path);
+	} else if (ext == "TTA") {
+		ret = Tag_TrueAudio::Create(path);
 	}
 
 	if (!ret) {
