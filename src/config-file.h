@@ -1,5 +1,5 @@
-#ifndef _adaapd_config_h_
-#define _adaapd_config_h_
+#ifndef _adaapd_config_file_h_
+#define _adaapd_config_file_h_
 
 /*
   adaapd - A DAAP daemon.

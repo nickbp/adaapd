@@ -67,33 +67,28 @@ static bool eq(const tag_t& t, Tag_StrId id, tag_str_t val) {
 	return true;
 }
 
-TEST(Tag, aiff) {/* id3v2; should match mp3 in theory, audacity just screwed it up */
+TEST(Tag, aiff) {
 	tag_t t = Tag::Create(PATH("empty.aiff"));
 	ASSERT_TRUE((bool)t);
 
 	EXPECT_TRUE(missing(t, BPM));
 	EXPECT_TRUE(eq(t, BIT_RATE, 705));
 	EXPECT_TRUE(missing(t, COMPILATION));
-	EXPECT_TRUE(missing(t, DATA_KIND));
 	EXPECT_TRUE(missing(t, DISC_COUNT));
-	EXPECT_TRUE(missing(t, DISC_NUMBER));//eq(t, DISC_NUMBER, 12));
+	EXPECT_TRUE(missing(t, DISC_NUMBER));
 	EXPECT_TRUE(missing(t, RELATIVE_VOLUME));
 	EXPECT_TRUE(eq(t, SAMPLE_RATE, 44100));
 	EXPECT_TRUE(eq(t, SIZE, 252));
-	EXPECT_TRUE(missing(t, START_TIME));
-	EXPECT_TRUE(missing(t, STOP_TIME));
 	EXPECT_TRUE(eq(t, TIME, 0));
-	EXPECT_TRUE(missing(t, TRACK_COUNT));//eq(t, TRACK_COUNT, 99));
+	EXPECT_TRUE(missing(t, TRACK_COUNT));
 	EXPECT_TRUE(eq(t, TRACK_NUMBER, 98));
 	EXPECT_TRUE(missing(t, USER_RATING));
 	EXPECT_TRUE(eq(t, YEAR, 1492));
 
 	EXPECT_TRUE(eq(t, ALBUM, "albyߝ"));
-	EXPECT_TRUE(missing(t, ARTIST));//eq(t, ARTIST, "àrty"));
+	EXPECT_TRUE(missing(t, ARTIST));
 	EXPECT_TRUE(eq(t, COMMENT, "empty"));
-	EXPECT_TRUE(missing(t, COMPOSER));//eq(t, COMPOSER, "compy"));
-	EXPECT_TRUE(missing(t, DESCRIPTION));
-	EXPECT_TRUE(missing(t, FORMAT));
+	EXPECT_TRUE(missing(t, COMPOSER));
 	EXPECT_TRUE(eq(t, GENRE, "Polka"));
 	EXPECT_TRUE(eq(t, TITLE, "tracky"));
 }
@@ -106,14 +101,11 @@ TEST(Tag, flac) {
 	EXPECT_TRUE(eq(t, BPM, 999));
 	EXPECT_TRUE(eq(t, BIT_RATE, 0));//???
 	EXPECT_TRUE(eq(t, COMPILATION, 1));
-	EXPECT_TRUE(missing(t, DATA_KIND));
 	EXPECT_TRUE(eq(t, DISC_COUNT, 13));
 	EXPECT_TRUE(eq(t, DISC_NUMBER, 12));
 	EXPECT_TRUE(missing(t, RELATIVE_VOLUME));
 	EXPECT_TRUE(eq(t, SAMPLE_RATE, 44100));
 	EXPECT_TRUE(eq(t, SIZE, 10661));
-	EXPECT_TRUE(missing(t, START_TIME));
-	EXPECT_TRUE(missing(t, STOP_TIME));
 	EXPECT_TRUE(eq(t, TIME, 0));
 	EXPECT_TRUE(eq(t, TRACK_COUNT, 99));
 	EXPECT_TRUE(eq(t, TRACK_NUMBER, 98));
@@ -124,8 +116,6 @@ TEST(Tag, flac) {
 	EXPECT_TRUE(eq(t, ARTIST, "àrty"));
 	EXPECT_TRUE(eq(t, COMMENT, "commenty"));
 	EXPECT_TRUE(eq(t, COMPOSER, "compy"));
-	EXPECT_TRUE(missing(t, DESCRIPTION));
-	EXPECT_TRUE(missing(t, FORMAT));
 	EXPECT_TRUE(eq(t, GENRE, "Polka"));
 	EXPECT_TRUE(eq(t, TITLE, "tracky"));
 }
@@ -137,28 +127,23 @@ TEST(Tag, gsm_wav) {/* no tag data, only stream info */
 	EXPECT_TRUE(missing(t, BPM));
 	EXPECT_TRUE(eq(t, BIT_RATE, 71));
 	EXPECT_TRUE(missing(t, COMPILATION));
-	EXPECT_TRUE(missing(t, DATA_KIND));
 	EXPECT_TRUE(missing(t, DISC_COUNT));
-	EXPECT_TRUE(missing(t, DISC_NUMBER));//eq(t, DISC_NUMBER, 12));
+	EXPECT_TRUE(missing(t, DISC_NUMBER));
 	EXPECT_TRUE(missing(t, RELATIVE_VOLUME));
 	EXPECT_TRUE(eq(t, SAMPLE_RATE, 44100));
 	EXPECT_TRUE(eq(t, SIZE, 1494));
-	EXPECT_TRUE(missing(t, START_TIME));
-	EXPECT_TRUE(missing(t, STOP_TIME));
 	EXPECT_TRUE(eq(t, TIME, 0));
-	EXPECT_TRUE(missing(t, TRACK_COUNT));//eq(t, TRACK_COUNT, 99));
-	EXPECT_TRUE(missing(t, TRACK_NUMBER));//eq(t, TRACK_NUMBER, 98));
+	EXPECT_TRUE(missing(t, TRACK_COUNT));
+	EXPECT_TRUE(missing(t, TRACK_NUMBER));
 	EXPECT_TRUE(missing(t, USER_RATING));
-	EXPECT_TRUE(missing(t, YEAR));//eq(t, YEAR, 1492));
+	EXPECT_TRUE(missing(t, YEAR));
 
-	EXPECT_TRUE(missing(t, ALBUM));//eq(t, ALBUM, "albyߝ"));
-	EXPECT_TRUE(missing(t, ARTIST));//eq(t, ARTIST, "àrty"));
-	EXPECT_TRUE(missing(t, COMMENT));//eq(t, COMMENT, "empty"));
-	EXPECT_TRUE(missing(t, COMPOSER));//eq(t, COMPOSER, "compy"));
-	EXPECT_TRUE(missing(t, DESCRIPTION));
-	EXPECT_TRUE(missing(t, FORMAT));
-	EXPECT_TRUE(missing(t, GENRE));//eq(t, GENRE, "Polka"));
-	EXPECT_TRUE(missing(t, TITLE));//eq(t, TITLE, "tracky"));
+	EXPECT_TRUE(missing(t, ALBUM));
+	EXPECT_TRUE(missing(t, ARTIST));
+	EXPECT_TRUE(missing(t, COMMENT));
+	EXPECT_TRUE(missing(t, COMPOSER));
+	EXPECT_TRUE(missing(t, GENRE));
+	EXPECT_TRUE(missing(t, TITLE));
 }
 
 TEST(Tag, m4a) {//TODO test file is crappy, add more fields!
@@ -169,16 +154,13 @@ TEST(Tag, m4a) {//TODO test file is crappy, add more fields!
 	EXPECT_TRUE(eq(t, BPM, 999));
 	EXPECT_TRUE(eq(t, BIT_RATE, 0));
 	EXPECT_TRUE(missing(t, COMPILATION));
-	EXPECT_TRUE(missing(t, DATA_KIND));
 	EXPECT_TRUE(missing(t, DISC_COUNT));
 	EXPECT_TRUE(eq(t, DISC_NUMBER, 12));
 	EXPECT_TRUE(missing(t, RELATIVE_VOLUME));
 	EXPECT_TRUE(eq(t, SAMPLE_RATE, 44100));
 	EXPECT_TRUE(eq(t, SIZE, 5683));
-	EXPECT_TRUE(missing(t, START_TIME));
-	EXPECT_TRUE(missing(t, STOP_TIME));
 	EXPECT_TRUE(eq(t, TIME, 0));
-	EXPECT_TRUE(missing(t, TRACK_COUNT));//eq(t, TRACK_COUNT, 99));
+	EXPECT_TRUE(missing(t, TRACK_COUNT));
 	EXPECT_TRUE(eq(t, TRACK_NUMBER, 98));
 	EXPECT_TRUE(missing(t, USER_RATING));
 	EXPECT_TRUE(eq(t, YEAR, 1984));
@@ -187,8 +169,6 @@ TEST(Tag, m4a) {//TODO test file is crappy, add more fields!
 	EXPECT_TRUE(eq(t, ARTIST, "àrty"));
 	EXPECT_TRUE(eq(t, COMMENT, "empty"));
 	EXPECT_TRUE(eq(t, COMPOSER, "compy"));
-	EXPECT_TRUE(missing(t, DESCRIPTION));
-	EXPECT_TRUE(missing(t, FORMAT));
 	EXPECT_TRUE(eq(t, GENRE, "Polka"));
 	EXPECT_TRUE(eq(t, TITLE, "tracky"));
 }
@@ -197,17 +177,14 @@ TEST(Tag, mp3) {
 	tag_t t = Tag::Create(PATH("empty.mp3"));
 	ASSERT_TRUE((bool)t);
 
-	EXPECT_TRUE(missing(t, BPM));//TODO
+	EXPECT_TRUE(eq(t, BPM, 999));
 	EXPECT_TRUE(eq(t, BIT_RATE, 0));
-	EXPECT_TRUE(missing(t, COMPILATION));
-	EXPECT_TRUE(missing(t, DATA_KIND));
+	EXPECT_TRUE(eq(t, COMPILATION, 1));
 	EXPECT_TRUE(eq(t, DISC_COUNT, 13));
 	EXPECT_TRUE(eq(t, DISC_NUMBER, 12));
 	EXPECT_TRUE(missing(t, RELATIVE_VOLUME));
 	EXPECT_TRUE(eq(t, SAMPLE_RATE, 44100));
 	EXPECT_TRUE(eq(t, SIZE, 1986));
-	EXPECT_TRUE(missing(t, START_TIME));
-	EXPECT_TRUE(missing(t, STOP_TIME));
 	EXPECT_TRUE(eq(t, TIME, 0));
 	EXPECT_TRUE(eq(t, TRACK_COUNT, 99));
 	EXPECT_TRUE(eq(t, TRACK_NUMBER, 98));
@@ -218,8 +195,6 @@ TEST(Tag, mp3) {
 	EXPECT_TRUE(eq(t, ARTIST, "àrty"));
 	EXPECT_TRUE(eq(t, COMMENT, "empty"));
 	EXPECT_TRUE(eq(t, COMPOSER, "compy"));
-	EXPECT_TRUE(missing(t, DESCRIPTION));
-	EXPECT_TRUE(missing(t, FORMAT));
 	EXPECT_TRUE(eq(t, GENRE, "Polka"));
 	EXPECT_TRUE(eq(t, TITLE, "tracky"));
 }
@@ -231,45 +206,37 @@ TEST(Tag, ms16_wav) {/* no tag data, only stream info */
 	EXPECT_TRUE(missing(t, BPM));
 	EXPECT_TRUE(eq(t, BIT_RATE, 705));
 	EXPECT_TRUE(missing(t, COMPILATION));
-	EXPECT_TRUE(missing(t, DATA_KIND));
 	EXPECT_TRUE(missing(t, DISC_COUNT));
-	EXPECT_TRUE(missing(t, DISC_NUMBER));//eq(t, DISC_NUMBER, 12));
+	EXPECT_TRUE(missing(t, DISC_NUMBER));
 	EXPECT_TRUE(missing(t, RELATIVE_VOLUME));
 	EXPECT_TRUE(eq(t, SAMPLE_RATE, 44100));
 	EXPECT_TRUE(eq(t, SIZE, 1478));
-	EXPECT_TRUE(missing(t, START_TIME));
-	EXPECT_TRUE(missing(t, STOP_TIME));
 	EXPECT_TRUE(eq(t, TIME, 0));
-	EXPECT_TRUE(missing(t, TRACK_COUNT));//eq(t, TRACK_COUNT, 99));
-	EXPECT_TRUE(missing(t, TRACK_NUMBER));//eq(t, TRACK_NUMBER, 98));
+	EXPECT_TRUE(missing(t, TRACK_COUNT));
+	EXPECT_TRUE(missing(t, TRACK_NUMBER));
 	EXPECT_TRUE(missing(t, USER_RATING));
-	EXPECT_TRUE(missing(t, YEAR));//eq(t, YEAR, 1492));
+	EXPECT_TRUE(missing(t, YEAR));
 
-	EXPECT_TRUE(missing(t, ALBUM));//eq(t, ALBUM, "albyߝ"));
-	EXPECT_TRUE(missing(t, ARTIST));//eq(t, ARTIST, "àrty"));
-	EXPECT_TRUE(missing(t, COMMENT));//eq(t, COMMENT, "empty"));
-	EXPECT_TRUE(missing(t, COMPOSER));//eq(t, COMPOSER, "compy"));
-	EXPECT_TRUE(missing(t, DESCRIPTION));
-	EXPECT_TRUE(missing(t, FORMAT));
-	EXPECT_TRUE(missing(t, GENRE));//eq(t, GENRE, "Polka"));
-	EXPECT_TRUE(missing(t, TITLE));//eq(t, TITLE, "tracky"));
+	EXPECT_TRUE(missing(t, ALBUM));
+	EXPECT_TRUE(missing(t, ARTIST));
+	EXPECT_TRUE(missing(t, COMMENT));
+	EXPECT_TRUE(missing(t, COMPOSER));
+	EXPECT_TRUE(missing(t, GENRE));
+	EXPECT_TRUE(missing(t, TITLE));
 }
 
 TEST(Tag, ogg) {
 	tag_t t = Tag::Create(PATH("empty.ogg"));
 	ASSERT_TRUE((bool)t);
 
-	EXPECT_TRUE(eq(t, BPM, 999));//TODO?
+	EXPECT_TRUE(eq(t, BPM, 999));
 	EXPECT_TRUE(eq(t, BIT_RATE, 96));
 	EXPECT_TRUE(eq(t, COMPILATION, 1));
-	EXPECT_TRUE(missing(t, DATA_KIND));
 	EXPECT_TRUE(eq(t, DISC_COUNT, 13));
 	EXPECT_TRUE(eq(t, DISC_NUMBER, 12));
 	EXPECT_TRUE(missing(t, RELATIVE_VOLUME));
 	EXPECT_TRUE(eq(t, SAMPLE_RATE, 44100));
 	EXPECT_TRUE(eq(t, SIZE, 4480));
-	EXPECT_TRUE(missing(t, START_TIME));
-	EXPECT_TRUE(missing(t, STOP_TIME));
 	EXPECT_TRUE(eq(t, TIME, 0));
 	EXPECT_TRUE(eq(t, TRACK_COUNT, 99));
 	EXPECT_TRUE(eq(t, TRACK_NUMBER, 98));
@@ -280,8 +247,6 @@ TEST(Tag, ogg) {
 	EXPECT_TRUE(eq(t, ARTIST, "àrty"));
 	EXPECT_TRUE(eq(t, COMMENT, "empty"));
 	EXPECT_TRUE(eq(t, COMPOSER, "compy"));
-	EXPECT_TRUE(missing(t, DESCRIPTION));
-	EXPECT_TRUE(missing(t, FORMAT));
 	EXPECT_TRUE(eq(t, GENRE, "Polka"));
 	EXPECT_TRUE(eq(t, TITLE, "tracky"));
 }
@@ -293,16 +258,13 @@ TEST(Tag, wma) {
 	EXPECT_TRUE(missing(t, BPM));
 	EXPECT_TRUE(eq(t, BIT_RATE, 198));
 	EXPECT_TRUE(missing(t, COMPILATION));
-	EXPECT_TRUE(missing(t, DATA_KIND));
 	EXPECT_TRUE(missing(t, DISC_COUNT));
-	EXPECT_TRUE(missing(t, DISC_NUMBER));//eq(t, DISC_NUMBER, 12));
+	EXPECT_TRUE(missing(t, DISC_NUMBER));
 	EXPECT_TRUE(missing(t, RELATIVE_VOLUME));
 	EXPECT_TRUE(eq(t, SAMPLE_RATE, 44100));
 	EXPECT_TRUE(eq(t, SIZE, 5024));
-	EXPECT_TRUE(missing(t, START_TIME));
-	EXPECT_TRUE(missing(t, STOP_TIME));
 	EXPECT_TRUE(eq(t, TIME, 0));
-	EXPECT_TRUE(missing(t, TRACK_COUNT));//eq(t, TRACK_COUNT, 99));
+	EXPECT_TRUE(missing(t, TRACK_COUNT));
 	EXPECT_TRUE(eq(t, TRACK_NUMBER, 98));
 	EXPECT_TRUE(missing(t, USER_RATING));
 	EXPECT_TRUE(eq(t, YEAR, 1492));
@@ -310,9 +272,7 @@ TEST(Tag, wma) {
 	EXPECT_TRUE(eq(t, ALBUM, "albyߝ"));
 	EXPECT_TRUE(eq(t, ARTIST, "àrty"));
 	EXPECT_TRUE(eq(t, COMMENT, "empty"));
-	EXPECT_TRUE(missing(t, COMPOSER));//eq(t, COMPOSER, "compy"));
-	EXPECT_TRUE(missing(t, DESCRIPTION));
-	EXPECT_TRUE(missing(t, FORMAT));
+	EXPECT_TRUE(missing(t, COMPOSER));
 	EXPECT_TRUE(eq(t, GENRE, "Polka"));
 	EXPECT_TRUE(eq(t, TITLE, "tracky"));
 }

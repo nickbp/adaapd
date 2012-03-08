@@ -182,12 +182,9 @@ namespace {
 			return tag_int(tag, id, out);
 		case adaapd::BPM:
 		case adaapd::COMPILATION:
-		case adaapd::DATA_KIND:
 		case adaapd::DISC_COUNT:
 		case adaapd::DISC_NUMBER:
 		case adaapd::RELATIVE_VOLUME:
-		case adaapd::START_TIME:
-		case adaapd::STOP_TIME:
 		case adaapd::TRACK_COUNT:
 		case adaapd::USER_RATING:
 			return false;//TODO
@@ -220,12 +217,9 @@ namespace {
 			GET_ASF_INT(tag, "year", out);//tag->year() doesnt work on test data
 		case adaapd::BPM:
 		case adaapd::COMPILATION:
-		case adaapd::DATA_KIND:
 		case adaapd::DISC_COUNT:
 		case adaapd::DISC_NUMBER:
 		case adaapd::RELATIVE_VOLUME:
-		case adaapd::START_TIME:
-		case adaapd::STOP_TIME:
 		case adaapd::TRACK_COUNT:
 		case adaapd::USER_RATING:
 			return false;//TODO
@@ -246,12 +240,9 @@ namespace {
 			return tag_int(tag, id, out);
 		case adaapd::BPM:
 		case adaapd::COMPILATION:
-		case adaapd::DATA_KIND:
 		case adaapd::DISC_COUNT:
 		case adaapd::DISC_NUMBER:
 		case adaapd::RELATIVE_VOLUME:
-		case adaapd::START_TIME:
-		case adaapd::STOP_TIME:
 		case adaapd::TRACK_COUNT:
 		case adaapd::USER_RATING:
 			return false;/* nope */
@@ -316,18 +307,15 @@ namespace {
 		case adaapd::YEAR:
 			return tag_int(tag, id, out);
 		case adaapd::BPM:
+			GET_ID3V2_INT(tag, "TBPM", out);
 		case adaapd::COMPILATION:
-		case adaapd::DATA_KIND:
-			return false;
+			GET_ID3V2_INT(tag, "TCMP", out);
 		case adaapd::DISC_COUNT:
 			GET_ID3V2_DENOM(tag, "TPOS", out);
 		case adaapd::DISC_NUMBER:
 			GET_ID3V2_NUMER(tag, "TPOS", out);
 		case adaapd::RELATIVE_VOLUME:
 			return false;//TODO RelativeVolumeFrame
-		case adaapd::START_TIME:
-		case adaapd::STOP_TIME:
-			return false;//TODO
 		case adaapd::TRACK_COUNT:
 			GET_ID3V2_DENOM(tag, "TRCK", out);
 		case adaapd::USER_RATING:
@@ -359,14 +347,11 @@ namespace {
 		case adaapd::BPM:
 			GET_MP4_INT(tag, "tmpo", out);
 		case adaapd::COMPILATION:
-		case adaapd::DATA_KIND:
 		case adaapd::DISC_COUNT:
 			return false;//TODO
 		case adaapd::DISC_NUMBER:
 			GET_MP4_INT(tag, "disk", out);
 		case adaapd::RELATIVE_VOLUME:
-		case adaapd::START_TIME:
-		case adaapd::STOP_TIME:
 		case adaapd::TRACK_COUNT:
 		case adaapd::USER_RATING:
 			return false;//TODO
@@ -399,15 +384,11 @@ namespace {
 			GET_XIPH_INT(tag, "TEMPO", out);
 		case adaapd::COMPILATION:
 			GET_XIPH_INT(tag, "COMPILATION", out);
-		case adaapd::DATA_KIND:
-			return false;//TODO
 		case adaapd::DISC_COUNT:
 			GET_XIPH_INT(tag, "DISCTOTAL", out);
 		case adaapd::DISC_NUMBER:
 			GET_XIPH_INT(tag, "DISCNUMBER", out);
 		case adaapd::RELATIVE_VOLUME:
-		case adaapd::START_TIME:
-		case adaapd::STOP_TIME:
 			return false;//TODO
 		case adaapd::TRACK_COUNT:
 			GET_XIPH_INT(tag, "TRACKTOTAL", out);
@@ -461,8 +442,6 @@ namespace {
 		case adaapd::TITLE:
 			return tag_str(tag, id, out);
 		case adaapd::COMPOSER:
-		case adaapd::DESCRIPTION:
-		case adaapd::FORMAT:
 			return false;//TODO
 		}
 		return false;
@@ -489,8 +468,6 @@ namespace {
 		case adaapd::TITLE:
 			return tag_str(tag, id, out);
 		case adaapd::COMPOSER:
-		case adaapd::DESCRIPTION:
-		case adaapd::FORMAT:
 			return false;//TODO
 		}
 		return false;
@@ -506,8 +483,6 @@ namespace {
 		case adaapd::TITLE:
 			return tag_str(tag, id, out);
 		case adaapd::COMPOSER:
-		case adaapd::DESCRIPTION:
-		case adaapd::FORMAT:
 			return false;/* nope */
 		}
 		return false;
@@ -533,9 +508,6 @@ namespace {
 			return tag_str(tag, id, out);
 		case adaapd::COMPOSER:
 			GET_ID3V2_STR(tag, "TCOM", out);
-		case adaapd::DESCRIPTION:
-		case adaapd::FORMAT:
-			return false;//TODO
 		}
 		return false;
 	}
@@ -564,9 +536,6 @@ namespace {
 			return tag_str(tag, id, out);
 		case adaapd::COMPOSER:
 			GET_MP4_STR(tag, "\xa9wrt", out);
-		case adaapd::DESCRIPTION:
-		case adaapd::FORMAT:
-			return false;//TODO
 		}
 		return false;
 	}
@@ -592,9 +561,6 @@ namespace {
 			return tag_str(tag, id, out);
 		case adaapd::COMPOSER:
 			GET_XIPH_STR(tag, "COMPOSER", out);
-		case adaapd::DESCRIPTION:
-		case adaapd::FORMAT:
-			return false;//TODO
 		}
 		return false;
 	}
@@ -603,7 +569,7 @@ namespace {
 	 * Tag printing (for debug)
 	 *****/
 
-	void print_ape(TagLib::APE::Tag* t) {
+	void print(TagLib::APE::Tag* t) {
 		if (!t) { LOG_DIR("NO APE TAG"); }
 		for (TagLib::APE::ItemListMap::ConstIterator iter = t->itemListMap().begin();
 			 iter != t->itemListMap().end(); ++iter) {
@@ -612,7 +578,7 @@ namespace {
 					iter->second.toString().to8Bit(true).c_str());
 		}
 	}
-	void print_asf(TagLib::ASF::Tag* t) {
+	void print(TagLib::ASF::Tag* t) {
 		if (!t) { LOG_DIR("NO ASF TAG"); }
 		for (TagLib::ASF::AttributeListMap::ConstIterator miter = t->attributeListMap().begin();
 			 miter != t->attributeListMap().end(); ++miter) {
@@ -624,7 +590,7 @@ namespace {
 			}
 		}
 	}
-	void print_id3v1(TagLib::ID3v1::Tag* t) {
+	void print(TagLib::ID3v1::Tag* t) {
 		if (!t) { LOG_DIR("NO ID3V1 TAG"); }
 		LOG("title[%s] artist[%s] album[%s] comment[%s] genre[%s] year[%d] track[%d]",
 				t->title().to8Bit(true).c_str(),
@@ -634,7 +600,7 @@ namespace {
 				t->genre().to8Bit(true).c_str(),
 				t->year(), t->track());
 	}
-	void print_id3v2(TagLib::ID3v2::Tag* t) {
+	void print(TagLib::ID3v2::Tag* t) {
 		if (!t) { LOG_DIR("NO ID3V2 TAG"); }
 		for (TagLib::ID3v2::FrameList::ConstIterator iter = t->frameList().begin();
 			 iter != t->frameList().end(); ++iter) {
@@ -642,7 +608,7 @@ namespace {
 					(*iter)->toString().to8Bit(true).c_str());
 		}
 	}
-	void print_mp4(TagLib::MP4::Tag* t) {
+	void print(TagLib::MP4::Tag* t) {
 		if (!t) { LOG_DIR("NO MP4 TAG"); }
 		for (TagLib::MP4::ItemListMap::ConstIterator miter = t->itemListMap().begin();
 			 miter != t->itemListMap().end(); ++miter) {
@@ -659,7 +625,7 @@ namespace {
 			}
 		}
 	}
-	void print_xiph(TagLib::Ogg::XiphComment* t) {
+	void print(TagLib::Ogg::XiphComment* t) {
 		if (!t) { LOG_DIR("NO OGG TAG"); }
 		for (TagLib::Ogg::FieldListMap::ConstIterator miter = t->fieldListMap().begin();
 			 miter != t->fieldListMap().end(); ++miter) {

@@ -1,5 +1,5 @@
-#ifndef _adaapd_playlist_h_
-#define _adaapd_playlist_h_
+#ifndef _adaapd_config_playlist_h_
+#define _adaapd_config_playlist_h_
 
 /*
   adaapd - A DAAP daemon.

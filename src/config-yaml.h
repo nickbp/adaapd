@@ -1,3 +1,6 @@
+#ifndef _adaapd_config_yaml_h_
+#define _adaapd_config_yaml_h_
+
 /*
   adaapd - A DAAP daemon.
   Copyright (C) 2012  Nicholas Parker
@@ -16,6 +19,23 @@
   along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#include "yaml.h"
+#include "config-playlist.h"
+#include "config-file.h"
 
-//TODO
+namespace adaapd {
+	/*! Accesses configuration in a file. */
+	class ConfigFile_Yaml : public ConfigFile {
+	public:
+		bool Read(Config& config);
+		bool Write(const Config& config);
+	};
+
+	/*! Accesses playlist specs in a file. */
+	class PlaylistFile_Yaml : public PlaylistFile {
+	public:
+		bool Read(playlists_t& list);
+		bool Write(const playlists_t& list);
+	};
+}
+
+#endif

@@ -26,7 +26,10 @@ namespace adaapd {
 	/*! Interface to be followed by Listener subscribers. */
 	class Subscriber {
 	public:
+		/*! Called when a file is added or modified */
 		virtual void Change(const std::string& path) = 0;
+		/*! Called when a file is deleted or moved */
+		virtual void Remove(const std::string& path) = 0;
 	};
 
 	/*! The listener waits for modifications to files within the given path,

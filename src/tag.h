@@ -27,33 +27,26 @@ namespace adaapd {
 		BPM,//asbt: short
 		BIT_RATE,//asbr: short kbit (256)
 		COMPILATION,//asco: byte true/false
-		DATA_KIND,//asdk: byte ??
 		DISC_COUNT,//asdc: short
 		DISC_NUMBER,//asdn: short
 		RELATIVE_VOLUME,//asrv: byte
 		SAMPLE_RATE,//assr: int hz (44100)
 		SIZE,//assz int size bytes
-		START_TIME,//asst: int ms
-		STOP_TIME,//assp: int ms
 		TIME,//astm: int ms
 		TRACK_COUNT,//astc: short
 		TRACK_NUMBER,//astn: short
 		USER_RATING,//asur: byte 20=1star, 40=2, 60=3, 80=4, 100=5
 		YEAR//asyr: short
 	};
-	const int Tag_IntId_Min = BPM, Tag_IntId_MAX = YEAR;
 
 	enum Tag_StrId {
 		ALBUM,//asal
 		ARTIST,//asar
 		COMMENT,//ascm (from file, eg encoder name)
 		COMPOSER,//ascp
-		DESCRIPTION,//asdt eg "MPEG audio file"
-		FORMAT,//asfm eg "mp3"
 		GENRE,//asgn
 		TITLE//minm
 	};
-	const int Tag_StrId_Min = ALBUM, Tag_StrId_MAX = TITLE;
 
 	/* db fields (wouldnt be in file's tag):
 	   DISABLED asdb: byte true/false
@@ -68,6 +61,15 @@ namespace adaapd {
 	   EQ_PRESET aseq: string ??
 	   RELATIVE_VOLUME asrv: byte ??
 	   NORM_VOLUME aeNV: int ??
+
+	   derived from the filename:
+	   DATA_KIND,//asdk: byte ??
+	   DESCRIPTION,//asdt eg "MPEG audio file"
+	   FORMAT,//asfm eg "mp3"
+
+	   customized by the user?:
+	   START_TIME,//asst: int ms
+	   STOP_TIME,//assp: int ms
 	*/
 
 	typedef int64_t tag_int_t;
