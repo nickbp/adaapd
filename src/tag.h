@@ -71,7 +71,7 @@ namespace adaapd {
 	*/
 
 	typedef int64_t tag_int_t;
-	typedef std::wstring tag_str_t;
+	typedef std::string tag_str_t;
 
 	class Tag;
 	typedef std::shared_ptr<Tag> tag_t;

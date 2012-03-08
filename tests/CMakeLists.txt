@@ -10,8 +10,8 @@ include_directories(
 find_package(Threads)
 set(gtest_libs ${gtest_LIBRARY} ${CMAKE_THREAD_LIBS_INIT})
 
-# TODO unit tests go here
+add_executable(test-tag test-tag.cc)
+target_link_libraries(test-tag adaapd ${gtest_libs})
+add_test(test-tag test-tag)
 
-#add_executable(test-x test-x.cpp)
-#target_link_libraries(test-x adaapd ${gtest_libs})
-#add_test(test-x test-x)
+add_subdirectory(tagdata)

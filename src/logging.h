@@ -1,5 +1,5 @@
-#ifndef _adaapd_log_h_
-#define _adaapd_log_h_
+#ifndef _adaapd_logging_h_
+#define _adaapd_logging_h_
 
 /*
   adaapd - A DAAP daemon.
@@ -48,14 +48,13 @@
 
 /* "log"'s taken by the math func */
 namespace logging {
-	/* DONT USE THESE, use DEBUG()/LOG()/ERR() instead: */
-
+	/* configuration */
 	extern FILE *fout;
 	extern FILE *ferr;
-
 	extern bool debug_enabled;
-	void _debug(const char* format, ...);
 
+	/* DONT USE THESE, use DEBUG()/LOG()/ERR() instead: */
+	void _debug(const char* format, ...);
 	void _log(const char* format, ...);
 	void _error(const char* format, ...);
 }

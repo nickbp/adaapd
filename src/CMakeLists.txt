@@ -24,7 +24,7 @@ add_custom_command (
 add_library(adaapd STATIC
   #config.cc
   #listener.cc
-  log.cc
+  logging.cc
   main.cc
   #playlist.cc
   tag.cc
