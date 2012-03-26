@@ -65,7 +65,6 @@ static void split(const std::string& path, std::vector<std::string>& out) {
 
 static inline std::string join(const std::string& dir,
 		const std::string& file) {
-	//ERR("%s + %s", dir.c_str(), file.c_str());
 	return dir + SEP_STR + file;
 }
 
@@ -83,9 +82,7 @@ namespace adaapd {
 		typedef std::list<std::pair<int, dirnode*> > dirlist_t;
 
 		dirnode(int inotify_fd, subscriber_t cb, const std::string& full_path)
-			: cb(cb), path(full_path), inotify_fd(inotify_fd), watch_fd(-1) {
-			ERR("%s", full_path.c_str());
-		}
+			: cb(cb), path(full_path), inotify_fd(inotify_fd), watch_fd(-1) { }
 		virtual ~dirnode() {
 			if (watch_fd != -1) {
 				ERR("WARNING: Deleting open watch %s!", path.c_str());
@@ -126,7 +123,6 @@ namespace adaapd {
 
 		/*! A file was added. Get its mtime then call AddFile(name, mtime). */
 		void AddFile(const std::string& filename) {
-			ERR("%s + %s", path.c_str(), filename.c_str());
 			std::string filepath = join(path, filename);
 			TYPE type;
 			time_t mtime;
@@ -143,7 +139,6 @@ namespace adaapd {
 		/*! A file was moved or deleted. Remove from tracked list and notify the
 		 * callback. */
 		void RemoveFile(const std::string& filename) {
-			ERR("%s + %s", path.c_str(), filename.c_str());
 			if (files.erase(filename) == 0) {
 				ERR("WARNING: %s told to remove untracked file %s!",
 						path.c_str(), filename.c_str());
@@ -153,7 +148,6 @@ namespace adaapd {
 
 		/*! A file was modified. Notify the callback with the new mtime. */
 		void ChangeFile(const std::string& filename) {
-			ERR("%s + %s", path.c_str(), filename.c_str());
 			files_t::const_iterator iter = files.find(filename);
 			if (iter == files.end()) {
 				ERR("WARNING: %s told to change untracked file %s!",
@@ -176,7 +170,6 @@ namespace adaapd {
 		/*! A directory was added. Recursively track its files/subdirectories,
 		 * signalling the callback for each file. */
 		void AddDir(const std::string& dirname, dirlist_t& added_subdirs) {
-			ERR("%s + %s", path.c_str(), dirname.c_str());
 			dirnode* new_node = new dirnode(inotify_fd, cb, join(path, dirname));
 			std::pair<dirmap_t::const_iterator,bool> result =
 				dirs.insert(std::make_pair(dirname, new_node));
@@ -197,16 +190,15 @@ namespace adaapd {
 		 * files/subdirectores from the tracked list and signal the callback for
 		 * each file. */
 		void RemoveDir(const std::string& dirname, dirlist_t& removed_subdirs) {
-			ERR("%s + %s", path.c_str(), dirname.c_str());
 			dirmap_t::const_iterator iter = dirs.find(dirname);
 			if (iter == dirs.end()) {
 				ERR("WARNING: %s isn't tracking a dir named %s!",
 						path.c_str(), dirname.c_str());
 				return;
 			}
-			iter->second->removeAll(removed_subdirs, true);
 			removed_subdirs.push_back(std::make_pair(iter->second->watch_fd, iter->second));
-			//CALLER: remove/delete these dirs from your map, CLEAR IS ALREADY CALLED
+			iter->second->removeAll(removed_subdirs, true);
+			dirs.erase(iter);
 		}
 
 	private:
@@ -248,8 +240,8 @@ namespace adaapd {
 
 			watch_fd = inotify_add_watch(inotify_fd, path.c_str(), WATCH_MODE_DIR);
 			if (watch_fd == -1) {
-				ERR("Couldn't add watch on %s: %d/%s",
-						path.c_str(), errno, strerror(errno));
+				ERR("Couldn't add watch on %d/%d %s: %d/%s",
+						inotify_fd, watch_fd, path.c_str(), errno, strerror(errno));
 				return false;
 			}
 
@@ -262,7 +254,6 @@ namespace adaapd {
 					continue;
 				}
 				/* add files/dirs, automatically recurse into dirs: */
-				ERR("%s + %s", path.c_str(), ep->d_name);
 				if (!fileInfo(join(path, ep->d_name), file_type, file_mtime)) {
 					continue;/* keep going */
 				}
@@ -282,6 +273,7 @@ namespace adaapd {
 		/*! Remove all entries within this directory, recursively calling
 		 * removeAll for each subdirectory. */
 		void removeAll(dirlist_t& removed_subdirs, bool notify) {
+			/* remove files */
 			if (notify) {
 				for (files_t::const_iterator iter = files.begin();
 					 iter != files.end(); ++iter) {
@@ -290,6 +282,7 @@ namespace adaapd {
 			}
 			files.clear();
 
+			/* remove subdirs */
 			for (dirmap_t::const_iterator iter = dirs.begin();
 				 iter != dirs.end(); ++iter) {
 				removed_subdirs.push_back(std::make_pair(iter->second->watch_fd, iter->second));
@@ -297,10 +290,11 @@ namespace adaapd {
 			}
 			dirs.clear();
 
+			/* remove ourselves, if we aren't already deleted */
 			if (watch_fd != -1) {
-				if (inotify_rm_watch(inotify_fd, watch_fd) != 0) {
-					ERR("Couldn't remove watch on %s/%d: %d/%s",
-							path.c_str(), watch_fd, errno, strerror(errno));
+				if (!notify && inotify_rm_watch(inotify_fd, watch_fd) != 0) {
+					ERR("Couldn't remove watch on %d/%d %s: %d/%s",
+							inotify_fd, watch_fd, path.c_str(), errno, strerror(errno));
 				}
 				watch_fd = -1;
 			}
@@ -389,7 +383,7 @@ namespace adaapd {
 			dirnode* dir = find(watch_fd);
 			if (dir == NULL) { return; }
 			dirnode::dirlist_t delme;
-			dir->AddDir(dirname, delme);
+			dir->RemoveDir(dirname, delme);
 			for (dirnode::dirlist_t::const_iterator iter = delme.begin();
 				 iter != delme.end(); ++iter) {
 				if (dirs.erase(iter->first) == 0) {
@@ -426,6 +420,11 @@ adaapd::Listener::Listener(ev::default_loop* loop, const std::string& root,
 	  loop(loop), inotify_fd(INVALID_FD), inotify_buf(NULL), tree(NULL) { }
 
 adaapd::Listener::~Listener() {
+	if (tree != NULL) {
+		delete tree;
+		tree = NULL;
+	}
+
 	if (inotify_fd != INVALID_FD) {
 		io.stop();
 		close(inotify_fd);
@@ -435,11 +434,6 @@ adaapd::Listener::~Listener() {
 	if (inotify_buf != NULL) {
 		free(inotify_buf);
 		inotify_buf = NULL;
-	}
-
-	if (tree != NULL) {
-		delete tree;
-		tree = NULL;
 	}
 }
 
@@ -467,15 +461,12 @@ bool adaapd::Listener::Init() {
 }
 
 void adaapd::Listener::cb_ready(ev::io& /*io*/, int revents) {
-	ERR("HEY! READ FROM FD %d", inotify_fd);
-
 	ssize_t len = read(inotify_fd, inotify_buf, INOTIFY_BUF_LEN);
 	if (len < 0) {
 		ERR("Failed to read from inotify file %d: %d/%s",
 				inotify_fd, errno, strerror(errno));
 		return;
 	}
-	ERR("Got %ld bytes...", len);
 
 	ssize_t i = 0;
 	while (i < len) {
@@ -486,7 +477,6 @@ void adaapd::Listener::cb_ready(ev::io& /*io*/, int revents) {
 }
 
 void adaapd::Listener::handle_event(struct inotify_event* event) {
-	ERR("%s -> %d", event->name, event->mask);
 	uint32_t mask = event->mask;
 	if ((mask & IN_ISDIR) != 0) {
 		/* It's a directory */
@@ -505,11 +495,9 @@ void adaapd::Listener::handle_event(struct inotify_event* event) {
 		}
 	} else {
 		/* It's a file */
-		/* sendme := new(ListenEvent)
-		   sendme.Path = ev.Name; */
 		if ((mask & IN_DELETE_SELF) != 0) {
 			/* for some reason this is hit for deleted directories (with ISDIR off!) */
-			LOG("delete self %s", event->name);
+			LOG_DIR("delete self");
 		} else if ((mask & (IN_MOVED_FROM | IN_DELETE)) != 0) {
 			LOG("deleted file %s", event->name);
 			tree->RemoveFile(event->wd, event->name);
