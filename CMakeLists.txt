@@ -13,6 +13,18 @@ else()
 	message(ERROR "Didn't find INotify. Non-Linux systems are currently unsupported.")
 endif()
 
+# libev
+
+find_path(ev_INCLUDE_DIR NAMES ev.h)
+find_library(ev_LIBRARY NAMES ev)
+if(ev_INCLUDE_DIR AND ev_LIBRARY)
+	message(STATUS "Found libev.")
+	list(APPEND INCLUDES ${ev_INCLUDE_DIR})
+	list(APPEND LIBS ${ev_LIBRARY})
+else()
+	message(ERROR "Didn't find libev. Install libev-dev and reconfigure.")
+endif()
+
 # TagLib
 
 find_path(taglib_INCLUDE_DIR NAMES taglib/taglib.h)

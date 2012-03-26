@@ -10,6 +10,10 @@ include_directories(
 find_package(Threads)
 set(gtest_libs ${gtest_LIBRARY} ${CMAKE_THREAD_LIBS_INIT})
 
+add_executable(test-listener test-listener.cc)
+target_link_libraries(test-listener adaapd ${gtest_libs})
+add_test(test-listener test-listener)
+
 add_executable(test-tag test-tag.cc)
 target_link_libraries(test-tag adaapd ${gtest_libs})
 add_test(test-tag test-tag)

@@ -19,30 +19,44 @@
   along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
+#include <functional>
 #include <string>
-#include <vector>
+
+#include <ev++.h>
 
 namespace adaapd {
-	/*! Interface to be followed by Listener subscribers. */
-	class Subscriber {
-	public:
-		/*! Called when a file is added or modified */
-		virtual void Change(const std::string& path) = 0;
-		/*! Called when a file is deleted or moved */
-		virtual void Remove(const std::string& path) = 0;
+	enum FILE_EVENT_TYPE {
+		FILE_CREATED,/* file is new or moved in */
+		FILE_CHANGED,/* existing file is modified */
+		FILE_REMOVED/* file is deleted or moved away */
 	};
 
-	/*! The listener waits for modifications to files within the given path,
+	/*! Called when a change occurs within the Listener's path. */
+	typedef std::function<void(const std::string& path, FILE_EVENT_TYPE type, time_t mtime)> subscriber_t;
+
+	/*! The listener waits for modifications to files within the given root path,
 	 * and notifies the subscriber of those changes. */
+	class dir_tree;
 	class Listener {
 	public:
-		Listener(const std::string& path, Subscriber& subscriber, libev_loop& loop);
+		Listener(ev::default_loop* loop, const std::string& root,
+				subscriber_t subscriber);
 		virtual ~Listener();
 
-	private:
-		void cb_ready(libev_event* ev);
+		bool Init();
 
-		Subscriber& subscriber;
+	private:
+		void cb_ready(ev::io &io, int revents);
+		void handle_event(struct inotify_event* event);
+
+		const std::string root;
+		const subscriber_t subscriber;
+
+		ev::io io;
+		ev::default_loop* loop;
+		int inotify_fd;
+		char* inotify_buf;
+		dir_tree* tree;
 	};
 }
 

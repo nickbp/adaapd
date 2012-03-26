@@ -21,7 +21,6 @@
 #include <logging.h>
 
 #define PATH(filename) "tagdata/" filename
-#define CHECK_MISSING(tag, field)
 
 using namespace adaapd;
 

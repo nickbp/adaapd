@@ -10,6 +10,7 @@ configure_file (
 include_directories(
 	${PROJECT_BINARY_DIR} # for version.h
 	${inotify_INCLUDE_DIR}
+	${ev_INCLUDE_DIR}
 	${taglib_INCLUDE_DIR}
 	${sqlite_INCLUDE_DIR}
 	${yaml_INCLUDE_DIR}
@@ -23,7 +24,7 @@ add_custom_command (
 
 add_library(adaapd STATIC
   #config.cc
-  #listener.cc
+  listener.cc
   logging.cc
   main.cc
   #playlist.cc
@@ -31,6 +32,7 @@ add_library(adaapd STATIC
   #yaml.cc
 )
 target_link_libraries(adaapd
+	${ev_LIBRARY}
 	${taglib_LIBRARY}
 	${sqlite_LIBRARY}
 	${yaml_LIBRARY}
