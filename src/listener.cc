@@ -129,8 +129,9 @@ namespace adaapd {
 			if (!fileInfo(filepath, type, mtime)) {
 				return;
 			}
-			if (type != FILE) {
-				ERR("Expected file %s in %s, got %d", filename.c_str(), path.c_str(), type);
+			if (type != FILE && type != SYMLINK) {
+				ERR("Expected file %s in %s, got %d",
+						filename.c_str(), path.c_str(), type);
 				return;
 			}
 			AddFile(filename, mtime);
@@ -160,8 +161,9 @@ namespace adaapd {
 			if (!fileInfo(filepath, type, mtime)) {
 				return;
 			}
-			if (type != FILE) {
-				ERR("Expected file %s in %s, got %d", filename.c_str(), path.c_str(), type);
+			if (type != FILE && type != SYMLINK) {
+				ERR("Expected file %s in %s, got %d",
+						filename.c_str(), path.c_str(), type);
 				return;
 			}
 			cb(filepath, FILE_CHANGED, mtime);
@@ -205,10 +207,10 @@ namespace adaapd {
 		typedef std::unordered_set<std::string> files_t;
 		typedef std::unordered_map<std::string, dirnode*> dirmap_t;
 
-		enum TYPE { FILE, DIRECTORY };
+		enum TYPE { FILE, DIRECTORY, SYMLINK };
 		bool fileInfo(const std::string& filepath, TYPE& type, time_t& mtime) {
 			struct stat sb;
-			if (stat(filepath.c_str(), &sb) != 0) {
+			if (lstat(filepath.c_str(), &sb) != 0) {
 				ERR("Unable to stat file %s: %d/%s",
 						filepath.c_str(), errno, strerror(errno));
 				return false;
@@ -219,8 +221,7 @@ namespace adaapd {
 			} else if (S_ISREG(sb.st_mode)) {
 				type = FILE;
 			} else if (S_ISLNK(sb.st_mode)) {
-				ERR("TODO symlinks %s", filepath.c_str());
-				return false;
+				type = SYMLINK;
 			} else {
 				ERR("Unsupported file mode %d: %s", sb.st_mode, filepath.c_str());
 				return false;
@@ -263,6 +264,9 @@ namespace adaapd {
 					break;
 				case FILE:
 					AddFile(ep->d_name, file_mtime);
+					break;
+				case SYMLINK:
+					AddFile(ep->d_name, file_mtime);//TODO
 					break;
 				}
 			}

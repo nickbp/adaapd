@@ -37,7 +37,8 @@ namespace sp = std::placeholders;
 #define SEP_STR "/"
 #endif
 
-#define TEST_DIR "testfiles"
+#define TEST_DIR "test_watched"
+#define TEST_UNWATCHED "test_unwatched"
 
 static inline std::string join(const std::string& dir, const std::string& file) {
 	return dir + SEP_STR + file;
@@ -62,8 +63,8 @@ static void rm_all(const std::string& dirpath) {
 		/* add files/dirs, automatically recurse into dirs: */
 		std::string filepath = join(dirpath, ep->d_name);
 		struct stat sb;
-		if (stat(filepath.c_str(), &sb) != 0) {
-			ERR("Unable to stat file %s: %d/%s",
+		if (lstat(filepath.c_str(), &sb) != 0) {
+			ERR("Unable to lstat file %s: %d/%s",
 					filepath.c_str(), errno, strerror(errno));
 			continue;
 		}
@@ -83,13 +84,25 @@ static void rm_all(const std::string& dirpath) {
 }
 
 struct file_event {
-	file_event(const std::string& path, adaapd::FILE_EVENT_TYPE type, bool dir)
-		: path(path), type(type), dir(dir) { }
-	file_event(const std::string& path, const std::string& path2)
-		: path(path), path2(path2) { }
-	std::string path, path2;
-	adaapd::FILE_EVENT_TYPE type;
-	bool dir;
+	enum DIR_FLAG {
+		DIR_INVALID, DIR, FILE
+	};
+	enum MOVE_FLAG {
+		MOVE_INVALID, MOVE, SYMLINK
+	};
+
+	file_event(const std::string& path, adaapd::FILE_EVENT_TYPE type, DIR_FLAG flag)
+		: path(path), type(type),
+		  dir_flag(flag), move_flag(MOVE_INVALID) { }
+	file_event(const std::string& path, const std::string& path2, MOVE_FLAG flag)
+		: path(path), path2(path2), type(adaapd::FILE_CREATED),
+		  dir_flag(DIR_INVALID), move_flag(flag) { }
+
+	const std::string path, path2;
+	const adaapd::FILE_EVENT_TYPE type;
+	const DIR_FLAG dir_flag;
+	const MOVE_FLAG move_flag;
+
 	std::list<file_event> recvs;
 };
 
@@ -100,6 +113,9 @@ protected:
 	virtual void SetUp() {
 		rm_all(TEST_DIR);
 		mkdir(TEST_DIR, 0755);
+
+		rm_all(TEST_UNWATCHED);
+		mkdir(TEST_UNWATCHED, 0755);
 
 		adaapd::subscriber_t cb =
 			std::bind(&ListenerTest::callback_event, this,
@@ -118,6 +134,7 @@ protected:
 	virtual void TearDown() {
 		listener.reset();
 		rm_all(TEST_DIR);
+		rm_all(TEST_UNWATCHED);
 		loop.unloop();
 	}
 
@@ -139,7 +156,7 @@ private:
 			switch (e.type) {
 			case adaapd::FILE_CREATED:
 				LOG("create %s", e.path.c_str());
-				if (e.dir) {
+				if (e.dir_flag == file_event::DIR) {
 					if (mkdir(e.path.c_str(), 0755) != 0) {
 						EXPECT_TRUE(false) << "Failed to mkdir " << e.path << ": "
 										   << errno << "/" << strerror(errno);
@@ -156,7 +173,7 @@ private:
 				break;
 			case adaapd::FILE_CHANGED:
 				LOG("change %s", e.path.c_str());
-				if (e.dir) {
+				if (e.dir_flag == file_event::DIR) {
 					EXPECT_TRUE(false);
 				} else {
 					FILE* f = fopen(e.path.c_str(), "a");
@@ -172,7 +189,7 @@ private:
 				break;
 			case adaapd::FILE_REMOVED:
 				LOG("remove %s", e.path.c_str());
-				if (e.dir) {
+				if (e.dir_flag == file_event::DIR) {
 					if (rmdir(e.path.c_str()) != 0) {
 						EXPECT_TRUE(false) << "Failed to rmdir " << e.path << ": "
 										   << errno << "/" << strerror(errno);
@@ -185,16 +202,25 @@ private:
 				}
 				break;
 			}
-			if (!e.dir) {
+			if (e.dir_flag != file_event::DIR) {
 				/* add to expected responses for callback_event */
 				torecv.push(e);
 			}
 		} else {
-			LOG("move %s -> %s", e.path.c_str(), e.path2.c_str());
-			if (rename(e.path.c_str(), e.path2.c_str()) != 0) {
-				EXPECT_TRUE(false) << "Failed to move "
-								   << e.path << " -> " << e.path2 << ": "
-								   << errno << "/" << strerror(errno);
+			if (e.move_flag == file_event::MOVE) {
+				LOG("move %s -> %s", e.path.c_str(), e.path2.c_str());
+				if (rename(e.path.c_str(), e.path2.c_str()) != 0) {
+					EXPECT_TRUE(false) << "Failed to move "
+									   << e.path << " -> " << e.path2 << ": "
+									   << errno << "/" << strerror(errno);
+				}
+			} else {
+				LOG("symlink %s -> %s", e.path.c_str(), e.path2.c_str());
+				if (symlink(e.path.c_str(), e.path2.c_str()) != 0) {
+					EXPECT_TRUE(false) << "Failed to symlink "
+									   << e.path2 << " -> " << e.path << ": "
+									   << errno << "/" << strerror(errno);
+				}
 			}
 			for (std::list<file_event>::const_iterator iter = e.recvs.begin();
 				 iter != e.recvs.end(); ++iter) {
@@ -236,100 +262,129 @@ private:
 };
 
 TEST_F(ListenerTest, create_file) {
-	add_event(file_event(join(TEST_DIR, "hey"), adaapd::FILE_CREATED, false));
+	add_event(file_event(join(TEST_DIR, "hey"), adaapd::FILE_CREATED, file_event::FILE));
 
-	add_event(file_event(join(TEST_DIR, "hey_dir"), adaapd::FILE_CREATED, true));
-	add_event(file_event(join(TEST_DIR, "hey_dir/hey2"), adaapd::FILE_CREATED, false));
+	add_event(file_event(join(TEST_DIR, "hey_dir"), adaapd::FILE_CREATED, file_event::DIR));
+	add_event(file_event(join(TEST_DIR, "hey_dir/hey2"), adaapd::FILE_CREATED, file_event::FILE));
 
-	add_event(file_event(join(TEST_DIR, "hey_dir/hey_dir"), adaapd::FILE_CREATED, true));
-	add_event(file_event(join(TEST_DIR, "hey_dir/hey_dir/hey3"), adaapd::FILE_CREATED, false));
+	add_event(file_event(join(TEST_DIR, "hey_dir/hey_dir"), adaapd::FILE_CREATED, file_event::DIR));
+	add_event(file_event(join(TEST_DIR, "hey_dir/hey_dir/hey3"), adaapd::FILE_CREATED, file_event::FILE));
 
 	loop.run();
 }
 
 TEST_F(ListenerTest, touch_file) {
-	add_event(file_event(join(TEST_DIR, "hey"), adaapd::FILE_CREATED, false));
+	add_event(file_event(join(TEST_DIR, "hey"), adaapd::FILE_CREATED, file_event::FILE));
 
-	add_event(file_event(join(TEST_DIR, "hey_dir"), adaapd::FILE_CREATED, true));
-	add_event(file_event(join(TEST_DIR, "hey_dir/hey2"), adaapd::FILE_CREATED, false));
+	add_event(file_event(join(TEST_DIR, "hey_dir"), adaapd::FILE_CREATED, file_event::DIR));
+	add_event(file_event(join(TEST_DIR, "hey_dir/hey2"), adaapd::FILE_CREATED, file_event::FILE));
 
-	add_event(file_event(join(TEST_DIR, "hey_dir/hey_dir"), adaapd::FILE_CREATED, true));
-	add_event(file_event(join(TEST_DIR, "hey_dir/hey_dir/hey3"), adaapd::FILE_CREATED, false));
+	add_event(file_event(join(TEST_DIR, "hey_dir/hey_dir"), adaapd::FILE_CREATED, file_event::DIR));
+	add_event(file_event(join(TEST_DIR, "hey_dir/hey_dir/hey3"), adaapd::FILE_CREATED, file_event::FILE));
 
-	add_event(file_event(join(TEST_DIR, "hey"), adaapd::FILE_CHANGED, false));
-	add_event(file_event(join(TEST_DIR, "hey_dir/hey2"), adaapd::FILE_CHANGED, false));
-	add_event(file_event(join(TEST_DIR, "hey_dir/hey_dir/hey3"), adaapd::FILE_CHANGED, false));
+	add_event(file_event(join(TEST_DIR, "hey"), adaapd::FILE_CHANGED, file_event::FILE));
+	add_event(file_event(join(TEST_DIR, "hey_dir/hey2"), adaapd::FILE_CHANGED, file_event::FILE));
+	add_event(file_event(join(TEST_DIR, "hey_dir/hey_dir/hey3"), adaapd::FILE_CHANGED, file_event::FILE));
 
 	loop.run();
 }
 
 TEST_F(ListenerTest, delete_file) {
-	add_event(file_event(join(TEST_DIR, "hey"), adaapd::FILE_CREATED, false));
+	add_event(file_event(join(TEST_DIR, "hey"), adaapd::FILE_CREATED, file_event::FILE));
 
-	add_event(file_event(join(TEST_DIR, "hey_dir"), adaapd::FILE_CREATED, true));
-	add_event(file_event(join(TEST_DIR, "hey_dir/hey2"), adaapd::FILE_CREATED, false));
+	add_event(file_event(join(TEST_DIR, "hey_dir"), adaapd::FILE_CREATED, file_event::DIR));
+	add_event(file_event(join(TEST_DIR, "hey_dir/hey2"), adaapd::FILE_CREATED, file_event::FILE));
 
-	add_event(file_event(join(TEST_DIR, "hey_dir/hey_dir"), adaapd::FILE_CREATED, true));
-	add_event(file_event(join(TEST_DIR, "hey_dir/hey_dir/hey3"), adaapd::FILE_CREATED, false));
+	add_event(file_event(join(TEST_DIR, "hey_dir/hey_dir"), adaapd::FILE_CREATED, file_event::DIR));
+	add_event(file_event(join(TEST_DIR, "hey_dir/hey_dir/hey3"), adaapd::FILE_CREATED, file_event::FILE));
 
-	add_event(file_event(join(TEST_DIR, "hey_dir/hey2"), adaapd::FILE_REMOVED, false));
-	add_event(file_event(join(TEST_DIR, "hey_dir/hey_dir/hey3"), adaapd::FILE_REMOVED, false));
+	add_event(file_event(join(TEST_DIR, "hey_dir/hey2"), adaapd::FILE_REMOVED, file_event::FILE));
+	add_event(file_event(join(TEST_DIR, "hey_dir/hey_dir/hey3"), adaapd::FILE_REMOVED, file_event::FILE));
 
-	add_event(file_event(join(TEST_DIR, "hey_dir/hey_dir"), adaapd::FILE_REMOVED, true));
-	add_event(file_event(join(TEST_DIR, "hey_dir"), adaapd::FILE_REMOVED, true));
+	add_event(file_event(join(TEST_DIR, "hey_dir/hey_dir"), adaapd::FILE_REMOVED, file_event::DIR));
+	add_event(file_event(join(TEST_DIR, "hey_dir"), adaapd::FILE_REMOVED, file_event::DIR));
 
 	/* have a file event last, so that callback_event is notified when we're done */
-	add_event(file_event(join(TEST_DIR, "hey"), adaapd::FILE_REMOVED, false));
+	add_event(file_event(join(TEST_DIR, "hey"), adaapd::FILE_REMOVED, file_event::FILE));
 
 	loop.run();
 }
 
 TEST_F(ListenerTest, move) {
-	add_event(file_event(join(TEST_DIR, "hey_dir"), adaapd::FILE_CREATED, true));
-	add_event(file_event(join(TEST_DIR, "hey_dir/hey2"), adaapd::FILE_CREATED, false));
+	add_event(file_event(join(TEST_DIR, "hey_dir"), adaapd::FILE_CREATED, file_event::DIR));
+	add_event(file_event(join(TEST_DIR, "hey_dir/hey2"), adaapd::FILE_CREATED, file_event::FILE));
 
-	add_event(file_event(join(TEST_DIR, "hey_dir/hey_dir"), adaapd::FILE_CREATED, true));
-	add_event(file_event(join(TEST_DIR, "hey_dir/hey_dir/hey3"), adaapd::FILE_CREATED, false));
+	add_event(file_event(join(TEST_DIR, "hey_dir/hey_dir"), adaapd::FILE_CREATED, file_event::DIR));
+	add_event(file_event(join(TEST_DIR, "hey_dir/hey_dir/hey3"), adaapd::FILE_CREATED, file_event::FILE));
 
-	add_event(file_event(join(TEST_DIR, "hey"), adaapd::FILE_CREATED, false));
+	add_event(file_event(join(TEST_DIR, "hey"), adaapd::FILE_CREATED, file_event::FILE));
 
 	{
-		file_event e(join(TEST_DIR, "hey_dir/hey_dir/hey3"),
-				join(TEST_DIR, "hey3"));
-		e.recvs.push_back(file_event(join(TEST_DIR, "hey_dir/hey_dir/hey3"), adaapd::FILE_REMOVED, false));
-		e.recvs.push_back(file_event(join(TEST_DIR, "hey3"), adaapd::FILE_CREATED, false));
+		file_event e(join(TEST_DIR, "hey_dir/hey_dir/hey3"), join(TEST_DIR, "hey3"), file_event::MOVE);
+		e.recvs.push_back(file_event(join(TEST_DIR, "hey_dir/hey_dir/hey3"), adaapd::FILE_REMOVED, file_event::FILE));
+		e.recvs.push_back(file_event(join(TEST_DIR, "hey3"), adaapd::FILE_CREATED, file_event::FILE));
 		add_event(e);
 	}
 
 	{
-		file_event e(join(TEST_DIR, "hey_dir"),
-				join(TEST_DIR, "hey_dir2"));
-		e.recvs.push_back(file_event(join(TEST_DIR, "hey_dir/hey2"), adaapd::FILE_REMOVED, false));
-		e.recvs.push_back(file_event(join(TEST_DIR, "hey_dir2/hey2"), adaapd::FILE_CREATED, false));
+		file_event e(join(TEST_DIR, "hey_dir"), join(TEST_DIR, "hey_dir2"), file_event::MOVE);
+		e.recvs.push_back(file_event(join(TEST_DIR, "hey_dir/hey2"), adaapd::FILE_REMOVED, file_event::FILE));
+		e.recvs.push_back(file_event(join(TEST_DIR, "hey_dir2/hey2"), adaapd::FILE_CREATED, file_event::FILE));
 		add_event(e);
 	}
 
 	loop.run();
 }
 
-TEST_F(ListenerTest, create_symlink) {
-	//TODO same action on a dir and a symlink to a dir
-	EXPECT_TRUE(false);
+TEST_F(ListenerTest, file_symlink) {
+	add_event(file_event(join(TEST_DIR, "hey"), adaapd::FILE_CREATED, file_event::FILE));
+
+	{
+		file_event e(join(TEST_DIR, "hey"), join(TEST_DIR, "fsym"), file_event::SYMLINK);
+		e.recvs.push_back(file_event(join(TEST_DIR, "fsym"), adaapd::FILE_CREATED, file_event::FILE));
+		add_event(e);
+	}
+
+	add_event(file_event(join(TEST_DIR, "hey"), adaapd::FILE_CHANGED, file_event::FILE));
+	//TODO add listener to dest which gets removed when the symlink is deleted?
+	//first try putting hey into UNWATCHED_DIR and see if it isn't already producing events when symlinked
+	//add_event(file_event(join(TEST_DIR, "fsym"), adaapd::FILE_CHANGED, file_event::FILE));
+
+	//TODO delete symlink
+
+	loop.run();
 }
 
-TEST_F(ListenerTest, delete_symlink) {
-	//TODO same action on a dir and a symlink to a dir
-	EXPECT_TRUE(false);
+TEST_F(ListenerTest, dir_symlink) {
+	add_event(file_event(join(TEST_DIR, "hey_dir"), adaapd::FILE_CREATED, file_event::DIR));
+	add_event(file_event(join(TEST_DIR, "hey_dir/hey2"), adaapd::FILE_CREATED, file_event::FILE));
+
+	{
+		file_event e(join(TEST_DIR, "hey_dir"), join(TEST_DIR, "dsym"), file_event::SYMLINK);
+		e.recvs.push_back(file_event(join(TEST_DIR, "dsym"), adaapd::FILE_CREATED, file_event::FILE));
+		add_event(e);
+	}
+
+	add_event(file_event(join(TEST_DIR, "hey_dir/hey2"), adaapd::FILE_CHANGED, file_event::FILE));
+	//TODO add listener to dest which gets removed when the symlink is deleted?
+	//first try putting hey_dir into UNWATCHED_DIR and see if it isn't already producing events when symlinked
+	//add_event(file_event(join(TEST_DIR, "dsym/hey2"), adaapd::FILE_CHANGED, file_event::FILE));
+
+	//TODO delete symlink
+
+	loop.run();
+}
+
+TEST_F(ListenerTest, infloop_symlink) {
+	//TODO make something to avoid this: unordered_set of tracked dirs, skip if already present
 }
 
 TEST_F(ListenerTest, delete_root_dir) {
-	//TODO same action on a dir and a symlink to a dir
-	EXPECT_TRUE(false);
+	//TODO
 }
 
 TEST_F(ListenerTest, move_root_dir) {
-	//TODO same action on a dir and a symlink to a dir
-	EXPECT_TRUE(false);
+	//TODO
 }
 
 int main(int argc, char **argv) {
