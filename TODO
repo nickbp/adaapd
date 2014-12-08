@@ -17,8 +17,9 @@ state machine instantiated per client.
    relatively quick to rebuild, hopefully no more than a couple
    seconds. The options file may want to support multiple directories
    as well as ways to blacklist/filter files by extension or regexp.
+   Use YAML (yaml-cpp?) for this.
 
-* File Listener
+* File Listener (MOSTLY DONE)
    Finds files within media directories, and monitors for changes to
    the playlist file. Uses inotify to tell Cache/Config when changes
    occur, and libev for handling the inotify reads. kevent support
@@ -30,7 +31,7 @@ state machine instantiated per client.
    Playlist detect any necessary changes. Eg "this file changed, which
    of these playlists might need to know?"
 
-* Tagger
+* Tagger (DONE)
    Given a data file handle, produce its metadata. Wrap TagLib, with
    support for uncommon format-specific fields like Rating.
 
